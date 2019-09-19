@@ -9,8 +9,9 @@ import (
 )
 
 type Window struct {
-	g		*gocui.Gui
-	sql 	mysql2.Db
+	g			*gocui.Gui
+	sql 		mysql2.Db
+	history 	History
 }
 var (
 	viewArr = []string{"v1", "v2", "v3", "v4"}
@@ -28,11 +29,11 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	nextIndex := (active + 1) % len(viewArr)
 	name := viewArr[nextIndex]
 
-	out, err := g.View("v2")
+	/*out, err := g.View("v2")
 	if err != nil {
 		return err
-	}
-	fmt.Fprintln(out, "Going from view "+v.Name()+" to "+name)
+	}*/
+	//fmt.Fprintln(out, "Going from view "+v.Name()+" to "+name)
 
 	if _, err := setCurrentViewOnTop(g, name); err != nil {
 		return err
@@ -117,6 +118,8 @@ func (w *Window)execCmd(g *gocui.Gui, v *gocui.View) error {
 	if inputs == "" {
 		return nil
 	}
+
+	w.history.Add(inputs)
 
 	v2, _ := g.View("v2")
 	v2.Clear()
@@ -260,6 +263,24 @@ func (w *Window) writeText(v *gocui.View, str string) {
 }
 
 
+func (w *Window)prevCmd(g *gocui.Gui, v *gocui.View) error {
+	v1, _ := g.View("v1")
+	w.writeText(v1, "456")
+	line := fmt.Sprintf("mysql>")
+	str := w.history.Prev()
+	w.writeText(v1, line + str)
+	return nil
+}
+
+func (w *Window)nextCmd(g *gocui.Gui, v *gocui.View) error{
+	v1, _ := g.View("v1")
+	w.writeText(v1, "123")
+	line := fmt.Sprintf("mysql>")
+	str := w.history.Next()
+	w.writeText(v1, line + str)
+	return nil
+}
+
 
 func Run() {
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -284,6 +305,13 @@ func Run() {
 	}
 
 	if err := g.SetKeybinding("v1", gocui.KeyEnter, gocui.ModNone,w.execCmd); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.SetKeybinding("v1", gocui.KeyArrowUp, gocui.ModNone,w.prevCmd); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding("v1", gocui.KeyArrowDown, gocui.ModNone,w.nextCmd); err != nil {
 		log.Panicln(err)
 	}
 
