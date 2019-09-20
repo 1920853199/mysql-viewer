@@ -7,7 +7,7 @@ type History struct {
 
 func (h *History) Add(str string)  {
 	h.list = append(h.list, str)
-	h.index = len(h.list)
+	h.index = len(h.list) - 1
 }
  
 func (h *History) Prev() string {
@@ -27,7 +27,7 @@ func (h *History) Next() string {
 	if len(h.list) == 0 {
 		return ""
 	}
-	if h.index >= len(h.list) {
+	if h.index >= len(h.list) - 1 {
 		return ""
 	}
 	//h.index = (h.index + 1) % len(h.list)

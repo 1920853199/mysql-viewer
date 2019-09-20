@@ -264,23 +264,42 @@ func (w *Window) writeText(v *gocui.View, str string) {
 
 
 func (w *Window)prevCmd(g *gocui.Gui, v *gocui.View) error {
+	w.deleteCurrentLine(g, v)
 	v1, _ := g.View("v1")
-	w.writeText(v1, "456")
-	line := fmt.Sprintf("mysql>")
 	str := w.history.Prev()
-	w.writeText(v1, line + str)
+	w.writeArrow(v1)
+	w.writeText(v1,str)
 	return nil
 }
 
 func (w *Window)nextCmd(g *gocui.Gui, v *gocui.View) error{
+	w.deleteCurrentLine(g, v)
 	v1, _ := g.View("v1")
-	w.writeText(v1, "123")
-	line := fmt.Sprintf("mysql>")
 	str := w.history.Next()
-	w.writeText(v1, line + str)
+	w.writeArrow(v1)
+	w.writeText(v1,str)
 	return nil
 }
 
+func (w *Window) deleteCurrentLine(g *gocui.Gui, v *gocui.View) error {
+	_, y := v.Cursor()
+	line, _ := v.Line(y)
+	n := len(line)
+	v.SetCursor(n, y)
+
+	for i := 0; i < n; i++ {
+		v.EditDelete(true)
+	}
+	return nil
+}
+
+func (w *Window) onKeyBackspace(g *gocui.Gui, v *gocui.View) error {
+	x, _ := v.Cursor()
+	if x  > len("mysql>") {
+		v.EditDelete(true)
+	}
+	return nil
+}
 
 func Run() {
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -312,6 +331,14 @@ func Run() {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding("v1", gocui.KeyArrowDown, gocui.ModNone,w.nextCmd); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := w.g.SetKeybinding("v1", gocui.KeyBackspace, gocui.ModNone, w.onKeyBackspace); err != nil {
+		log.Panicln(err)
+	}
+	// delete
+	if err := w.g.SetKeybinding("v1", gocui.KeyBackspace2, gocui.ModNone, w.onKeyBackspace); err != nil {
 		log.Panicln(err)
 	}
 
